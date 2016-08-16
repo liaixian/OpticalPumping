@@ -12,32 +12,30 @@ Ephi= 1i;%relative field along phi
 beam=setBeam(power,detuning,thetaD,phiD,Etheta,Ephi);%the beam informations
 
 %% ************************************************
-B=1;
-Gm2=20000*pi/(2*atom.pm.te);%the damping rate of optical coherence
-%temperature= 300.0;
+B=1; %G
+Gm2=2.5e+3*2*pi/(atom.pm.te);%the damping rate of optical coherence
+temperature= 300.0; %K
 
 eHgApprox=effectiveHgHighPressure(atom,beam,Gm2); %Eq(6.78)
-eHg=effectiveHg( atom, beam, B, Gm2 );%, temperature
+eHg=effectiveHg( atom, beam, B, Gm2, temperature);%
 
-rho0=atom.LS.cPg/atom.sw.gg;
-options=odeset('RelTol',1e-4,'AbsTol',1e-4*ones(1,atom.sw.gg^2));
-[t1,rho1] = ode45( @drho, [0:1e-2:100] ,rho0, options, atom, eHg); %ode45
- rLp=logical(atom.LS.rPg);
-     [row,~]=size(t1);
-     for k=1:row
-     rho11(k,:)=real(rho1(k,rLp));
-     end
-figure; clf;
-subplot(1,2,1)
-plot(t1,rho11);
-xlabel('Time in units of what')
-ylabel('Sublevel populations')
-
- Gmp1=-trace(imag(eHg))*2.0/hbar;
- kappa1=2*trace(real(eHg))/(hbar*Gmp1);
+    rho0=atom.LS.cPg/atom.sw.gg;
+    options=odeset('RelTol',1e-4,'AbsTol',1e-4*ones(1,atom.sw.gg^2));
+    [t1,rho1] = ode45( @drho, [0:1e-2:100] ,rho0, options, atom, eHg); %ode45
+     rLp=logical(atom.LS.rPg);
+         [row,~]=size(t1);
+         for k=1:row
+         rho11(k,:)=real(rho1(k,rLp));
+         end
+    figure; clf;
+    subplot(1,2,1)
+    plot(t1,rho11);
+    xlabel('Time in units of what')
+    ylabel('Sublevel populations')
 
 Gmp=-imag(eHgApprox)*2/hbar;   %%Mean pumping rate
 kappa=2*real(eHgApprox)/(hbar*Gmp);  %Shift parameter, Eq(6.85)
+
 %Fictitious spin, [Kx Ky Kz] = . Eq(6.79) %[sqrt(2)/4 0 sqrt(2)/4];
 Kj = beam.s * atom.pumpR;
  
@@ -46,9 +44,16 @@ Kj = beam.s * atom.pumpR;
 op=opticalPumpingMatixAop(atom,B,Kj,kappa); %high-pressure optical pumping matrix, Eq(6.87)
 HgC=LSHamiltonian(atom,B);%HgC=flat(eigVg.H)-sharp(eigVg.H);%Liouville-space Hamiltonian
 G=1i*HgC/hbar+Gmp*op.Aop; %static damping operator, Eq(6.86)
-
- eHg
- eHg2=eHgApprox*(eye(atom.sw.gg)-4*(Kj(1)*op.Sj(:,:,1)+Kj(2)*op.Sj(:,:,2)-Kj(3)*op.Sj(:,:,3)))
+%% *********************************************
+ eHg;
+         Gmp1=-trace(imag(eHg))*2.0/hbar;
+         kappa1=2*trace(real(eHg))/(hbar*Gmp1);
+ eHg2=eHgApprox*(eye(atom.sw.gg)-4*(Kj(1)*op.Sj(:,:,1)+Kj(2)*op.Sj(:,:,2)+Kj(3)*op.Sj(:,:,3)));
+         Gmp2=-imag(trace(eHg2))*2/hbar;   
+         kappa2=2*real(trace(eHg2))/(hbar*Gmp2);
+Gmp1/Gmp2  
+kappa1/kappa2
+ %       Gmp=Gmp1;  kappa=kappa1;
 
 %% *********************************************
 Lp=logical(atom.LS.cPg);%logical variable for populations
